@@ -1,45 +1,147 @@
-# Spotify Clone — Frontend Setup
+# 🎵 Sangeet — Spotify Clone
 
-## Kya banaya
-`Frontend/` folder mein ek pura React (Vite) + Tailwind app hai jo tumhare Express backend se seedha baat karta hai:
+A full-stack music streaming app built with the MERN stack (MongoDB, Express, React, Node.js) and styled with Tailwind CSS. Users can sign up as a **listener** or an **artist** — artists can upload tracks and organize them into albums, and everyone can browse and play music.
 
-- **Auth**: Login / Register (role: listener ya artist), cookie-based session, refresh pe bhi login bana rehta hai (`/api/auth/me`).
-- **Home**: saare tracks ki list, click karke play/pause, "Play all".
-- **Albums**: album grid → album detail page (uske tracks ke saath).
-- **Upload track** (sirf artist ke liye): title + audio file → ImageKit ke through upload.
-- **Create album** (sirf artist ke liye): title + checklist se tracks select karke album banao.
-- **Persistent bottom player bar**: vinyl-spin animation, seek bar, next/prev.
-- Design: warm dark "vinyl lounge" theme — Fraunces (headings) + Inter (body), amber/teal accents — Tailwind se fully custom, koi default Spotify-green copy nahi kiya.
+---
 
-## Backend mein maine 2 chhote fix/add kiye
-1. **CORS middleware** (`Backend/src/app.js`) — bina iske frontend (port 5173) se cookie wali request backend (port 3000) tak nahi pahochti.
-2. **`GET /api/auth/me`** route + controller — taaki page refresh pe user login se logout na ho jaye.
-3. Ek chhota bug fix bhi kiya: `registerUser` mein "User Already Exists" case ke baad `return` missing tha (isse header-already-sent error aata).
+## ✨ Features
 
-Baaki tumhara pura backend logic bilkul waisa hi hai jaisa tumne likha tha.
+- **Authentication** — Register/login with role selection (`user` or `artist`), JWT stored in an HTTP cookie, session persists across page refresh
+- **Browse & play** — View all uploaded tracks, play/pause, skip next/previous, seek — powered by a persistent bottom player bar
+- **Albums** — Browse albums, view album details with their tracks
+- **Artist tools** — Upload audio tracks (stored via ImageKit) and group tracks into albums
+- **Responsive UI** — Custom dark "vinyl lounge" theme (Fraunces + Inter fonts, amber/teal accents), works on both desktop and mobile with a slide-in navigation drawer
 
-## Chalane ka tarika
+---
 
-**1. Backend** (port 3000):
+## 🛠️ Tech Stack
+
+**Backend**
+- Node.js + Express
+- MongoDB + Mongoose
+- JWT for authentication, `cookie-parser` for session cookies
+- Multer (in-memory storage) + ImageKit for audio file uploads
+- bcrypt for password hashing
+
+**Frontend**
+- React (Vite)
+- Tailwind CSS
+- React Router
+- Axios
+- lucide-react icons
+
+---
+
+## 📁 Project Structure
+
+```
+.
+├── Backend/
+│   ├── server.js                # Entry point
+│   ├── src/
+│   │   ├── app.js               # Express app, middleware, CORS
+│   │   ├── db/db.js             # MongoDB connection
+│   │   ├── models/              # user, music, album schemas
+│   │   ├── controllers/         # auth & music logic
+│   │   ├── routes/              # auth & music routes
+│   │   ├── middlewares/         # auth guards (user / artist)
+│   │   └── services/            # ImageKit upload service
+│   └── .env
+│
+└── Frontend/
+    ├── src/
+    │   ├── api/axios.js         # Axios instance (backend base URL)
+    │   ├── context/             # AuthContext, PlayerContext
+    │   ├── components/          # Sidebar, PlayerBar, MusicRow, AlbumCard...
+    │   ├── pages/                # Login, Register, Home, Albums, Upload, CreateAlbum
+    │   └── App.jsx
+    ├── tailwind.config.js
+    └── index.html
+```
+
+---
+
+## 🔌 API Reference
+
+Base URL: `http://localhost:3000` (or your deployed backend URL)
+
+### Auth — `/api/auth`
+
+| Method | Route        | Auth required | Description                          |
+|--------|--------------|---------------|---------------------------------------|
+| POST   | `/register`  | No            | Create account (`username`, `email`, `password`, `role`) |
+| POST   | `/login`     | No            | Login with `username` **or** `email` + `password` |
+| POST   | `/logout`    | Yes           | Clear the session cookie              |
+| GET    | `/me`        | Yes           | Get the currently logged-in user      |
+
+### Music — `/api/music`
+
+| Method | Route              | Auth required       | Description                              |
+|--------|--------------------|----------------------|-------------------------------------------|
+| GET    | `/`                | Any logged-in user   | List all tracks                          |
+| GET    | `/albums`          | Any logged-in user   | List all albums                          |
+| GET    | `/albums/:albumID` | Any logged-in user   | Get one album with its populated tracks  |
+| POST   | `/upload`          | Artist only          | Upload a track — `multipart/form-data` with `title` and `music` (file) |
+| POST   | `/album`           | Artist only          | Create an album — `{ title, musics: [trackId, ...] }` |
+
+### Data Models
+
+- **User**: `username`, `email`, `password` (hashed), `role` (`user` | `artist`)
+- **Music**: `uri` (ImageKit URL), `title`, `artist` (ref → User)
+- **Album**: `title`, `musics` (ref[] → Music), `artist` (ref → User)
+
+---
+
+## 🚀 Local Setup
+
+### Prerequisites
+- Node.js (v18+)
+- A MongoDB database (local or [MongoDB Atlas](https://www.mongodb.com/atlas))
+- An [ImageKit](https://imagekit.io/) account (for audio file storage)
+
+### 1. Clone the repo
+```bash
+git clone <your-repo-url>
+cd <repo-folder>
+```
+
+### 2. Backend
 ```bash
 cd Backend
 npm install
-npm run dev   # ya: node server.js
 ```
-Apna `.env` check kar lena — `MONGO_URI`, `JWT_SECRET`, `IMAGEKIT_PRIVATE_KEY` already the.
 
-**2. Frontend** (port 5173):
+Create a `.env` file in `Backend/`:
+```env
+MONGO_URI=your_mongodb_connection_string
+JWT_SECRET=your_jwt_secret
+IMAGEKIT_PRIVATE_KEY=your_imagekit_private_key
+```
+
+Run it:
+```bash
+node server.js
+```
+You should see `Server Running On Port 3000` and `Database Connected Successfully`.
+
+### 3. Frontend
 ```bash
 cd Frontend
 npm install
 npm run dev
 ```
-Browser mein `http://localhost:5173` khol lena.
+Open `http://localhost:5173`.
 
-Agar backend kisi aur port/URL pe chalao, to `Frontend/src/api/axios.js` mein `BASE_URL` badal dena.
+> If your backend runs on a different URL, update `BASE_URL` in `Frontend/src/api/axios.js`.
 
-## Test karne ka flow
-1. Register karo role = **Artist**.
-2. Sidebar se "Upload track" — koi bhi mp3/audio file + title daal ke upload karo.
-3. "Create album" se us track ko album mein daal do.
-4. "Home" ya "Albums" pe jaake play karo — bottom player bar mein vinyl ghoomega 🎵.
+### 4. Try it out
+1. Register a new account with role **Artist**
+2. Go to **Upload track** in the sidebar → add an audio file + title
+3. Go to **Create album** → select the uploaded track(s) → create the album
+4. Go to **Home** or **Albums** and play your track
+
+---
+
+## 📄 License
+
+Personal / educational project — feel free to fork and build on it.
