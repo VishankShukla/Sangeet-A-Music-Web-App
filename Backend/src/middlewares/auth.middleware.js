@@ -1,6 +1,6 @@
 const jwt = require("jsonwebtoken");
 
-async function authArtist(req, res, next) {
+function authArtist(req, res, next) {
   const token = req.cookies.token;
 
   if (!token) {
@@ -18,11 +18,11 @@ async function authArtist(req, res, next) {
 
     next();
   } catch (err) {
-    res.status(401).json({ message: "Unauthorized" });
+    return res.status(401).json({ message: "You Don't Have Access" });
   }
 }
 
-async function authBothUser(req, res, next) {
+function authBothUser(req, res, next) {
   const token = req.cookies.token;
 
   if (!token) {
@@ -40,8 +40,8 @@ async function authBothUser(req, res, next) {
 
     next();
   } catch (err) {
-    res.status(401).json({ message: "Unauthorized" });
+    return res.status(401).json({ message: "Unauthorized" });
   }
 }
 
-module.exports={authArtist,authBothUser}
+module.exports = { authArtist, authBothUser };

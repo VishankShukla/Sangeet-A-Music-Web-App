@@ -1,12 +1,23 @@
 const musicModel = require("../models/music.model");
-const albumModel = require("../models/alnum.model");
-const jwt = require("jsonwebtoken");
+const albumModel = require("../models/album.model");
 const { uploadFile } = require("../services/storage.service");
 
 async function createMusic(req, res) {
-  
+  try {
     const { title } = req.body;
     const file = req.file;
+
+    if (!title) {
+      return res.status(400).json({
+        message: "Title is required",
+      });
+    }
+
+    if (!file) {
+      return res.status(400).json({
+        message: "Music file is required",
+      });
+    }
 
     const result = await uploadFile(file.buffer.toString("base64"));
 
@@ -25,11 +36,23 @@ async function createMusic(req, res) {
         artist: music.artist,
       },
     });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({
+      message: "Internal Server Error",
+    });
+  }
 }
 
 async function createAlbum(req, res) {
-  
+  try {
     const { title, musics } = req.body;
+
+    if (!title || !musics) {
+      return res.status(400).json({
+        message: "Title and musics are required",
+      });
+    }
 
     const album = await albumModel.create({
       title,
@@ -46,36 +69,79 @@ async function createAlbum(req, res) {
         musics: album.musics,
       },
     });
-  
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({
+      message: "Internal Server Error",
+    });
+  }
 }
 
 async function getAllMusics(req, res) {
-    const musics = await musicModel.find().populate("artist","username email")
+  try {
+    const musics = await musicModel.find().populate("artist", "username email");
 
     res.status(200).json({
-        message:"Musics Fetch Successfully",
-        musics: musics,
-    })
+      message: "Musics Fetch Successfully",
+      musics: musics,
+    });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({
+      message: "Internal Server Error",
+    });
+  }
 }
 
 async function getAllAlbums(req, res) {
-    const albums = await albumModel.find().select("title artist").populate("artist","username email")
+  try {
+    const albums = await albumModel
+      .find()
+      .select("title artist")
+      .populate("artist", "username email");
 
     res.status(200).json({
-        message: "Albums fetched successfully",
-        albums: albums
-    })
+      message: "Albums fetched successfully",
+      albums: albums,
+    });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({
+      message: "Internal Server Error",
+    });
+  }
 }
 
 async function getAlbumByID(req, res) {
-    const albumId = req.params.albumID
-    const album = await albumModel.findById(albumId).populate("artist","username email").populate("musics")
+  try {
+    const albumId = req.params.albumID;
+    const album = await albumModel
+      .findById(albumId)
+      .populate("artist", "username email")
+      .populate("musics");
 
+    if (!album) {
+      return res.status(404).json({
+        message: "Album not found",
+      });
+    }
 
     return res.status(200).json({
-        message: "Album fetched successfully",
-        album: album
-    })
+      message: "Album fetched successfully",
+      album: album,
+    });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({
+      message: "Internal Server Error",
+    });
+  }
 }
 
-module.exports = { createMusic , createAlbum , getAllMusics , getAllAlbums , getAlbumByID };
+module.exports = {
+  createMusic,
+  createAlbum,
+  getAllMusics,
+  getAllAlbums,
+  getAlbumByID,
+};
